@@ -1,13 +1,14 @@
 import express from "express"
 import cluster from "cluster"
 import core from "os"
-import compression from "compression"
 import log4js from "log4js"
 import minimist from "minimist"
+import APIControl from "./routes.js"
 
 const app = express();
 
-app.use(compression())
+app.use(express.json())
+app.use('/',APIControl)
 
 let minimizedArgs= minimist(process.argv) 
 export let port = minimizedArgs.port || 8080
@@ -69,50 +70,3 @@ log4js.configure({
 })
 
 //El NODE_ENV está configurado en Run>Add Conf>NodeJS>launch.json
-const logger = log4js.getLogger(process.env.NODE_ENV);
-
-
-let sentence = "Hola mundo"
-
-app.get('/',(req,res)=>{
-    let response = ""
-    for(let i=0;i<1000;i++){
-        response+=sentence;
-    }
-    res.send({message:response});
-})
-
-app.get('/saludogzip',(req,res)=>{
-    let response = ""
-    for(let i=0;i<1000;i++){
-        response+=sentence;
-    }
-    res.send({message:response});
-})
-
-app.get('/error',(req,res)=>{
-    logger.error("Tronó algo")
-    res.send("Tronó algo")
-})
-
-app.get("*", (req, res, next) => {
-    logger.warn(`ruta inexistente! Método: ${req.method} Ruta: ${req.url}`)
-    res.send("Warning, ruta inexistente")
-    next()
-})
-
-app.get("/info", compression(), (req,res)=> {
-    logger.info(`Método: ${req.method} Ruta: ${req.url}`)
-    const info= {
-        entry_arg: minimizedArgs._.slice(2),
-        platform: process.platform,
-        node_version: process.version,
-        reserved_memory: process.memoryUsage(),
-        execution_path: process.execPath,
-        process_id: process.pid,
-        proyect_folder: process.cwd(),
-        cpus: cluster.isPrimary? 1: core.cpus().length
-    }
-    res.send(info)
-    console.log(info)
-})
